@@ -30,35 +30,15 @@ conn_mongo = 'mongodb://localhost:27017'
 client = pymongo.MongoClient(conn_mongo)
 mdb = client.quotes_db
 
+# name_author="Bob_Marley"
+
 
 @app.route("/")
 @app.route("/home")
 def welcome():
-    #"""List all available api routes."""
-    # (
-
-    #      f"Available Routes:<br/>"
-    #      f"/api/v1.0/quotes"
-    #      f" - Quotes<br/>"
-
-    #      f"/api/v1.0/authors"
-    #      f" - List of authors<br/>"
-
-    #      f"/api/v1.0/authors/< author name >"
-    #      f" - Search for an Author<br/> for examaple, author first name last name"
-
-    #      f"/api/v1.0/tags"
-    #      f" - List of tags associated to quotes<br/>"
-
-    #      f"/api/v1.0/tags/<tag>"
-    #      f" - Search for a tags associated to quotes<br/>"
-
-    #      f"/api/v1.0/top10tags"
-    #      f" - List of top 10 tags for all quotes scraped<br/> for examaple, /api/v1.0/love"
-    # )
     routes = {"/api/v1.0/quotes": " - Quotes",
               "/api/v1.0/authors": " - List of Authors",
-              "/api/v1.0/authors/< author name >": " - Search for an Author, for example: author first name, last name.",
+              "/api/v1.0/authors/Bob%20Marley": " - Search for an Author, for example: Bob Marley.",
               "/api/v1.0/tags": " - List of tags associated to quotes",
               "/api/v1.0/tags/<tag>": " - Search for a tags associated to quotes",
               "/api/v1.0/top10tags": " - List of top 10 tags for all quotes scraped, for examaple: /api/v1.0/love"
@@ -73,6 +53,8 @@ def quotes():
     clean_quotes_data = []
     for q in quotes_data:
         q.pop('_id')
+        q.pop('author_description')
+        q.pop('author_born')
         clean_quotes_data.append(q)
 
     return jsonify({"Quotes": clean_quotes_data, "Number of Quotes": len(clean_quotes_data)})
@@ -80,35 +62,72 @@ def quotes():
 
 @app.route("/api/v1.0/authors")
 def authors():
+    quotes_data = list(mdb.quotes_everything_collection.find())
+    unique_authors = []
+    author_list_details = []
+    for q in quotes_data:
+        num_quotes = 0
+        if q['author_name'] not in unique_authors:
+            unique_authors.append(q['author_name'])
+        for author in quotes_data:
+            if author['author_name'] == unique_authors[-1]:
+                num_quotes += 1
+        author_details = {"name": q["author_name"],
+                          "description": q['author_description'],
+                          "born": q['author_born'],
+                          'count': num_quotes,
+                          'quotes': [{"text": q["quote_text"], "tags":q["tags"]}]
+                          }
+        author_list_details.append(author_details)
 
-    #"""Return a list of authors of scrapped quotes"""
-    return 0
+    return jsonify({"Author Total": len(unique_authors), "details": author_list_details})
 
 
-@app.route("/api/v1.0/<author_name>")
+@ app.route("/api/v1.0/authors/<author_name>")
 def author_name(author_name):
+    # author_name=author_name.str.replace("_"," ",1)
+    quotes_data = list(mdb.quotes_everything_collection.find())
+    # author_quotes=list(mdb.quotes_everything_collection.find_one({"author_name",author_name}))
+    author_info = list(mdb.author_information_collection.find())
+    author_list_details = []
+    print(author_name)
+    num_quotes = 0
+    
+    for q in quotes_data:
+        print(q)
+        if q["author_name"] == author_name:
+            num_quotes+=1
+            author_details = {"name": q["author_name"],
+                              "description": q['author_description'],
+                              "born": q['author_born'],
+                              'number_of_quotes': num_quotes,
+                              'quotes': [{"text": q["quote_text"], "tags":q["tags"]}]
+                              }
+            author_list_details.append(author_details)
+    for x in author_list_details:
+        x['number_of_quotes'] = num_quotes
     # Docstring
-    #"""Return a JSON list of author names for quotes"""
-    return 0
+    # """Return a JSON list of author names for quotes"""
+    return jsonify(author_list_details)
 
 
-@app.route("/api/v1.0/tags")
+@ app.route("/api/v1.0/tags")
 def tags():
-    #"""Returns a list of tags assigned to quotes"""
+    # """Returns a list of tags assigned to quotes"""
     return 0
 
 
-@app.route("/api/v1.0/<tag>")
+@ app.route("/api/v1.0/<tag>")
 def tag_search(tag):
     # Docstring
     # search for tag
     return 0
 
 
-@app.route("/api/v1.0/toptentags")
+@ app.route("/api/v1.0/toptentags")
 def top_ten():
     # Docstring
-    #"""Return a list of the top ten tags associated with the quotes."""
+    # """Return a list of the top ten tags associated with the quotes."""
     return 0
 
 
