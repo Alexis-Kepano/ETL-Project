@@ -2,7 +2,6 @@
 __pycache__/
 *.py[cod]
 *$py.class
-config.py
 
 # C extensions
 *.so
@@ -81,6 +80,7 @@ target/
 # IPython
 profile_default/
 ipython_config.py
+config.py
 
 # pyenv
 .python-version
